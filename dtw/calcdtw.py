@@ -13,20 +13,28 @@ signals = calcMfccs(signals, window=scipy.signal.windows.boxcar, n_fft=512, hop_
 for signal in signals:
     signal['name'] = signal['name'].split('.')[0]
 
-apsignals = [x for x in signals if x['label']=='AP']
+from os import walk
+
+alreadycalculated = []
+
+for path,subirs,files in walk("data"):
+  for name in files:
+    alreadycalculated.append(name.split(".")[0])
+
 
 calculatedData = []
-for entry_x in tqdm(apsignals):
-    calculatedData=[]   
-    for entry_y in tqdm(signals):
-        cost, cost_matrix, acc_cost_matrix, path = accelerated_dtw(entry_x['mfccs'].T, entry_y['mfccs'].T, scipy.spatial.distance.cosine)
-        data = {
-            "x": entry_x['name'],
-            "y": entry_y['name'],
-            "cost": cost,
-            "cost_matrix": cost_matrix,
-            "acc_cost_matrix": acc_cost_matrix,
-            "path":path
-        }
-        calculatedData.append(data)
-    export_to_pickle(f"data/{entry_x['name']}",calculatedData)    
+for entry_x in tqdm(signals):
+    if entry_x not in alreadycalculated:
+        calculatedData=[]   
+        for entry_y in tqdm(signals):
+            cost, cost_matrix, acc_cost_matrix, path = accelerated_dtw(entry_x['mfccs'].T, entry_y['mfccs'].T, scipy.spatial.distance.cosine)
+            data = {
+                "x": entry_x['name'],
+                "y": entry_y['name'],
+                "cost": cost,
+                "cost_matrix": cost_matrix,
+                "acc_cost_matrix": acc_cost_matrix,
+                "path":path
+            }
+            calculatedData.append(data)
+        export_to_pickle(f"data/{entry_x['name']}",calculatedData)    
